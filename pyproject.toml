@@ -1,0 +1,13 @@
+[project]
+name = "Wuthering_Waves_Downloader"
+version = "0.1"
+description = "Wuthering Waves Downloader"
+
+[tool.cxfreeze]
+executables = [
+    {script = "main.py"}
+]
+
+[tool.cxfreeze.build_exe]
+excludes = ["unittest"]
+zip_include_packages = ["urllib3","pydantic"]
