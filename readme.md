@@ -1,6 +1,6 @@
-# Wuthering Waves
+# Wuthering Waves Launcher
 
-Wuthering Waves is a Python-based project that allows you to download the game. This project focuses on simplicity and functionality, providing a command-line interface for a seamless user experience.
+Wuthering Waves Launcher is a Python-based project that allows you to download the game. This project focuses on simplicity and functionality, providing a command-line interface for a seamless user experience.
 
 ## Features
 
