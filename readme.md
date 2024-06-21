@@ -14,14 +14,14 @@ To use Wuthering Waves, follow these steps:
 1. Clone the repository to your local machine.
 2. Ensure you have Python installed on your system.
 3. Open a terminal or command prompt and navigate to the project directory.
-4. Run the `wuthering_waves.py` file using the Python interpreter.
+4. Run the `main.py` file using the Python interpreter.
 
 ## Usage
 
 Download the build from the releases page and run the executable file. You can also run the Python script directly using the following command:
 
 ```bash
-python wuthering_waves.py
+python main.py
 ```
 
 ## Contributing
