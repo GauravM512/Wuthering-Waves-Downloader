@@ -1,6 +1,6 @@
 [project]
 name = "Wuthering_Waves_Downloader"
-version = "0.1"
+version = "0.2"
 description = "Wuthering Waves Downloader"
 
 [tool.cxfreeze]
