@@ -35,8 +35,18 @@ if __name__ == "__main__":
     else:
         folder_path = config["path"]
 
-    print("Selected folder:", folder_path)
-    
-    # Assuming download.start_download takes a path as an argument
-    download.start_download(folder_path)
 
+    print("1. Install game")
+    print("2. Verify game")
+    choice = input("Enter your choice: ")
+    while choice not in ["1", "2"]:
+        print("Invalid choice. Please enter 1 or 2.")
+        choice = input("Enter your choice: ")
+    if choice == "1":
+        print("Selected folder:", folder_path)
+        
+        download.start_download(folder_path)
+    else:
+        print("Selected folder:", folder_path)
+        print("Verifying game...")
+        download.verify_game(folder_path)
