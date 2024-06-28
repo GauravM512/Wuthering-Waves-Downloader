@@ -27,6 +27,7 @@ Download the build from the releases page and run the executable file. You can a
 ```bash
 python main.py
 ```
+Use verify to check the integrity of the downloaded files , it can also be used to resume downloads.
 
 ## Contributing
 
