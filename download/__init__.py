@@ -10,9 +10,6 @@ import hashlib
 # Initialize the urllib3 PoolManager
 pool = urllib3.PoolManager()
 
-# Retrieve resources from the URL module
-resource = url.resources()
-
 def bytes_to_gb(bytes_value):
     """
     Convert bytes to gigabytes, rounded to 2 decimal places.
@@ -20,7 +17,7 @@ def bytes_to_gb(bytes_value):
     gb_value = bytes_value / (1024 ** 3)
     return round(gb_value, 2)
 
-def download_size():
+def download_size(resource):
     """
     Calculate the total download size of all resources in gigabytes.
     """
@@ -106,17 +103,17 @@ def _download_chunk(url, output_path, start_pos, end_pos, progress):
         print(f"Error downloading chunk {start_pos}-{end_pos}: {e}")
         progress.put(-1)
 
-def start_download(download_path, threads=4):
+def start_download(resource,cdn,download_path, threads=4):
     """
     Start downloading all resources to the specified download path using the given number of threads.
     """
     for resource_item in resource.resource:
-        dest_path = f"{download_path}/{resource_item.dest}"
+        dest_path = f"{download_path}{resource_item.dest}"
         # if os.path.exists(dest_path):
         #     print(f"File {dest_path} already exists, skipping download.")
         #     continue
         # else:
-        download_file(url.cdn + resource_item.dest, dest_path, threads)
+        download_file(cdn + resource_item.dest, dest_path, threads)
     print("Download completed")
 
 def calculate_md5(file_path, chunk_size=1024*1024):
@@ -133,7 +130,7 @@ def calculate_md5(file_path, chunk_size=1024*1024):
         print(f"Error calculating MD5 for {file_path}: {e}")
         return None
 
-def verify_game(download_path):
+def verify_game(resource,cdn,download_path):
     """
     Verify the integrity of downloaded game files by comparing their MD5 checksums.
     """
@@ -146,8 +143,8 @@ def verify_game(download_path):
             else:
                 print(f"{resource_item.dest} is corrupted. Deleting and re-downloading...")
                 os.remove(file_path)
-                download_file(url.cdn + resource_item.dest, file_path)
+                download_file(cdn + resource_item.dest, file_path)
         else:
             print(f"{resource_item.dest} is missing. Downloading...")
-            download_file(url.cdn + resource_item.dest, file_path)
+            download_file(cdn + resource_item.dest, file_path)
     print("Verification completed")
