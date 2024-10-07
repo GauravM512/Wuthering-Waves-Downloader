@@ -4,27 +4,34 @@ import threading
 import time
 import urllib3
 from queue import Queue
-from . import url
 import hashlib
-
+from typing import List, Optional
+from . import url
+from .models.resources import Model as Resource
 # Initialize the urllib3 PoolManager
 pool = urllib3.PoolManager()
 
-def bytes_to_gb(bytes_value):
+def bytes_to_gb(bytes_value: int) -> float:
     """
     Convert bytes to gigabytes, rounded to 2 decimal places.
     """
-    gb_value = bytes_value / (1024 ** 3)
-    return round(gb_value, 2)
+    return round(bytes_value / (1024 ** 3), 2)
 
-def download_size(resource):
+def download_size(resource: Resource) -> float:
     """
     Calculate the total download size of all resources in gigabytes.
     """
     size = sum([x.size for x in resource.resource])
     return bytes_to_gb(size)
 
-def download_file(url, output_path, num_threads=4, timeout=30):
+def update_progress_bar(downloaded: int, file_size: int) -> None:
+    percent = 100 * (downloaded / float(file_size))
+    filled_length = int(round(50 * downloaded / float(file_size)))
+    bar = '█' * filled_length + '-' * (50 - filled_length)
+    sys.stdout.write(f'\rProgress: |{bar}| {percent:.1f}% Complete')
+    sys.stdout.flush()
+
+def download_file(url: str, output_path: str, num_threads: int = 4, timeout: int = 30) -> bool:
     """
     Download a file from the given URL to the specified output path using multiple threads.
     """
@@ -48,11 +55,11 @@ def download_file(url, output_path, num_threads=4, timeout=30):
         file.seek(file_size - 1)
         file.write(b'\0')
 
-    progress = Queue()
+    progress: Queue[int] = Queue()
     start_time = time.time()
 
     try:
-        threads = []
+        threads: List[threading.Thread] = []
         for i in range(num_threads):
             start = file_size // num_threads * i
             end = file_size // num_threads * (i + 1) - 1
@@ -71,14 +78,13 @@ def download_file(url, output_path, num_threads=4, timeout=30):
                     print("\nDownload failed")
                     return False
                 downloaded += p
-                percent = 100 * (downloaded / float(file_size))
-                filled_length = int(round(50 * downloaded / float(file_size)))
-                bar = '█' * filled_length + '-' * (50 - filled_length)
-                sys.stdout.write(f'\rProgress: |{bar}| {percent:.1f}% Complete')
-                sys.stdout.flush()
+                update_progress_bar(downloaded, file_size)
             except Exception as e:
                 print(f"\nDownload error: {e}")
                 return False
+
+        for thread in threads:
+            thread.join()
 
     except Exception as e:
         print(f"\nDownload error: {e}")
@@ -87,7 +93,7 @@ def download_file(url, output_path, num_threads=4, timeout=30):
     print(f"\nDownload completed in {time.time() - start_time:.2f} seconds")
     return True
 
-def _download_chunk(url, output_path, start_pos, end_pos, progress):
+def _download_chunk(url: str, output_path: str, start_pos: int, end_pos: int, progress: Queue[int]) -> None:
     """
     Download a chunk of a file from the given URL and write it to the output path.
     """
@@ -103,20 +109,16 @@ def _download_chunk(url, output_path, start_pos, end_pos, progress):
         print(f"Error downloading chunk {start_pos}-{end_pos}: {e}")
         progress.put(-1)
 
-def start_download(resource,cdn,download_path, threads=4):
+def start_download(resource: Resource, cdn: str, download_path: str, threads: int = 4) -> None:
     """
     Start downloading all resources to the specified download path using the given number of threads.
     """
     for resource_item in resource.resource:
         dest_path = f"{download_path}{resource_item.dest}"
-        # if os.path.exists(dest_path):
-        #     print(f"File {dest_path} already exists, skipping download.")
-        #     continue
-        # else:
         download_file(cdn + resource_item.dest, dest_path, threads)
     print("Download completed")
 
-def calculate_md5(file_path, chunk_size=1024*1024):
+def calculate_md5(file_path: str, chunk_size: int = 1024*1024) -> Optional[str]:
     """
     Calculate the MD5 checksum of a file.
     """
@@ -130,7 +132,7 @@ def calculate_md5(file_path, chunk_size=1024*1024):
         print(f"Error calculating MD5 for {file_path}: {e}")
         return None
 
-def verify_game(resource,cdn,download_path):
+def verify_game(resource: Resource, cdn: str, download_path: str) -> None:
     """
     Verify the integrity of downloaded game files by comparing their MD5 checksums.
     """
