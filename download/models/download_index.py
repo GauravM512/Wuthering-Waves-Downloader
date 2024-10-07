@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import List
+from typing import Any, Dict, List, Optional
 
 from pydantic import BaseModel, Field
 
@@ -10,17 +10,6 @@ class CdnListItem(BaseModel):
     K2: int
     P: int
     url: str
-
-
-class Changelog(BaseModel):
-    zh_Hans: str = Field(..., alias='zh-Hans')
-    de: str
-    zh_Hant: str = Field(..., alias='zh-Hant')
-    ko: str
-    ja: str
-    en: str
-    fr: str
-    es: str
 
 
 class CurrentGameInfo(BaseModel):
@@ -42,7 +31,8 @@ class ResourcesDiff(BaseModel):
 
 class Default(BaseModel):
     cdnList: List[CdnListItem]
-    changelog: Changelog
+    changelog: Dict[str, Any]
+    changelogVisible: int
     resources: str
     resourcesBasePath: str
     resourcesDiff: ResourcesDiff
@@ -52,6 +42,31 @@ class Default(BaseModel):
     version: str
 
 
+class Text(BaseModel):
+    de: Optional[str] = None
+    zh_Hant: Optional[str] = Field(None, alias='zh-Hant')
+    ko: Optional[str] = None
+    ja: Optional[str] = None
+    en: Optional[str] = None
+    fr: Optional[str] = None
+    es: Optional[str] = None
+
+
+class RHIOptionListItem(BaseModel):
+    cmdOption: str
+    isShow: int
+    text: Text
+
+
+class ResourcesLogin(BaseModel):
+    host: str
+    loginSwitch: int
+
+
 class Model(BaseModel):
     hashCacheCheckAccSwitch: int
     default: Default
+    predownloadSwitch: int
+    RHIOptionSwitch: int
+    RHIOptionList: List[RHIOptionListItem]
+    resourcesLogin: ResourcesLogin

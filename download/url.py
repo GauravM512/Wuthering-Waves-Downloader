@@ -9,6 +9,7 @@ GAME =dict(
     OS_INDEX="https://prod-alicdn-gamestarter.kurogame.com/pcstarter/prod/game/G153/50004_obOHXFrFanqsaIEOmuKroCcbZkQRBC7c/index.json"
     )
 http = urllib3.PoolManager()
+http.headers["User-Agent"] = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.3"
 
 
 def index(index_url):
@@ -28,4 +29,4 @@ def resources(index_data):
 
 
 if __name__ == "__main__":
-    print(resources())
+    print(resources(index(GAME["GP_INDEX"])))
