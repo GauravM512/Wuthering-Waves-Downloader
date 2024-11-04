@@ -1,32 +1,41 @@
 import json
 import urllib3
 from urllib.parse import urljoin
+from typing import Optional
 from .models.download_index import Model
 from .models.resources import Model as ResourcesModel
+from .config import GAME_INDICES, USER_AGENT
 
-GAME =dict(
-    GP_INDEX="https://prod-alicdn-gamestarter.kurogame.com/pcstarter/prod/game/G153/50009_ZXniDENS4vnMhNEhl7cLOQMojTLKLGgu/index.json",
-    OS_INDEX="https://prod-alicdn-gamestarter.kurogame.com/pcstarter/prod/game/G153/50004_obOHXFrFanqsaIEOmuKroCcbZkQRBC7c/index.json"
-    )
-http = urllib3.PoolManager()
-http.headers["User-Agent"] = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.3"
+class URLHandler:
+    def __init__(self):
+        self.http = urllib3.PoolManager()
+        self.http.headers["User-Agent"] = USER_AGENT
 
+    def get_index(self, index_type: str) -> Optional[Model]:
+        try:
+            index_url = GAME_INDICES[index_type]
+            response = self.http.request('GET', index_url)
+            data = json.loads(response.data)
+            return Model(**data)
+        except Exception as e:
+            print(f"Error fetching index: {e}")
+            return None
 
-def index(index_url):
-    response = http.request('GET', index_url)
-    data = json.loads(response.data)
-    data = Model(**data)
-    return data
-
-
-def resources(index_data):
-    cdn = index_data.default.cdnList[0].url
-    resources = urljoin(cdn, index_data.default.resources)
-    response = http.request('GET', resources)
-    data = json.loads(response.data.decode('utf-8'))
-    data = ResourcesModel(**data)
-    return data
-
+    def get_resources(self, index_data: Model) -> Optional[ResourcesModel]:
+        try:
+            cdn = index_data.default.cdnList[0].url
+            resources_url = urljoin(cdn, index_data.default.resources)
+            response = self.http.request('GET', resources_url)
+            data = json.loads(response.data.decode('utf-8'))
+            return ResourcesModel(**data)
+        except Exception as e:
+            print(f"Error fetching resources: {e}")
+            return None
 
 if __name__ == "__main__":
-    print(resources(index(GAME["GP_INDEX"])))
+    handler = URLHandler()
+    index_data = handler.get_index("GP_INDEX")
+    if index_data:
+        resources_data = handler.get_resources(index_data)
+        if resources_data:
+            print(resources_data)
