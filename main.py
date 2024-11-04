@@ -1,13 +1,15 @@
-import download
 import tkinter as tk
 from tkinter import filedialog
 import json
 import os
+from download import GameDownloader
+from download.url import URLHandler
+from download.config import GAME_INDICES, DEFAULT_THREADS
 
 # Configuration file path and default settings
 CONFIG_PATH = "config.json"
 DEFAULT_CONFIG = {
-    "threads": 4,
+    "threads": DEFAULT_THREADS,
     "path": "",
     "GAME": "",
 }
@@ -84,6 +86,8 @@ def select_game_version(config: dict) -> None:
 
 def main():
     config = load_config(CONFIG_PATH, DEFAULT_CONFIG)
+    url_handler = URLHandler()
+    downloader = GameDownloader()
     
     if not config.get("path"):
         print("Please select a folder to download the files to.")
@@ -96,9 +100,19 @@ def main():
         select_game_version(config)
     
     folder_path = config["path"]
-    index = download.url.index(download.url.GAME[config["GAME"]])
-    resources = download.url.resources(index)
-    cdn = "https://hw-pcdownload-aws.aki-game.net/" + index.default.resourcesBasePath
+    
+    # Get game index and resources
+    index_data = url_handler.get_index(config["GAME"])
+    if not index_data:
+        print("Failed to fetch game index. Exiting...")
+        return
+    
+    resources = url_handler.get_resources(index_data)
+    if not resources:
+        print("Failed to fetch resources. Exiting...")
+        return
+    
+    cdn = index_data.default.cdnList[0].url + index_data.default.resourcesBasePath
     
     print("Game selected:", config["GAME"])
     print("1. Install game")
@@ -106,22 +120,24 @@ def main():
     print("3. Change download folder")
     print("4. Change Game Version (Googleplay or Overseas)")
     print("5. Exit")
-    choice = input("Enter your choice: ")
     
     while True:
         choice = input("Enter your choice: ")
         
         if choice == "1":
             print("Selected folder:", folder_path)
-            download.start_download(resources, cdn, folder_path, threads=config["threads"])
+            total_size = downloader.calculate_download_size(resources)
+            print(f"Total download size: {total_size:.2f} GB")
+            downloader.verify_and_download(resources, cdn, folder_path)
             print("Game installed successfully.")
+            client_path = os.path.join(folder_path, "Client/Binaries/Win64/")
             print("Opening game folder...")
-            os.startfile(os.path.join(folder_path, "Client/Binaries/Win64/"))
+            os.startfile(client_path)
             print("Run Client-Win64-Shipping.exe to start the game")
         elif choice == "2":
             print("Selected folder:", folder_path)
             print("Verifying game...")
-            download.verify_game(resources, cdn, folder_path)
+            downloader.verify_and_download(resources, cdn, folder_path)
             print("Game verified successfully.")
         elif choice == "3":
             folder_path = select_folder()
@@ -130,11 +146,16 @@ def main():
                 print("Download folder updated successfully.")
         elif choice == "4":
             select_game_version(config)
+            # Refresh index and resources after game version change
+            index_data = url_handler.get_index(config["GAME"])
+            resources = url_handler.get_resources(index_data) if index_data else None
+            if not resources:
+                print("Failed to fetch new game version resources.")
         elif choice == "5":
             print("Exiting...")
             break
         else:
-            print("Invalid choice.")
+            print("Invalid choice. Please try again.")
 
 if __name__ == "__main__":
     try:
