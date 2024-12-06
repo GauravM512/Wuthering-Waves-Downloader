@@ -1,195 +1,41 @@
-- name: Build executables or extension modules from Python projects
-  # You may pin to the exact commit or the version.
-  # uses: Nuitka/Nuitka-Action@12e193a947ea7cb9c807a4e4161092f2c16ac501
-  uses: Nuitka/Nuitka-Action@v1.1
-  with:
-    # Directory to run nuitka in if not top level
-    working-directory: # optional, default is .
-    # Version of nuitka to use, branches, tags work
-    nuitka-version: # optional, default is main
-    # Path to python script that is to be built.
-    script-name: 
-    # Github personal access token of an account authorized to access the Nuitka-commercial repo
-    access-token: # optional
-    # Create an importable binary extension module executable instead of a program. Defaults to off.
+name: Build Python Executable
 
-    module: # optional
-    # Enable standalone mode for output. This allows you to transfer the created binary
-to other machines without it using an existing Python installation. This also
-means it will become big. It implies these option: "--follow-imports" and
-"--python-flag=no_site". Defaults to off.
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
 
-    standalone: # optional
-    # On top of standalone mode, enable onefile mode. This means not a folder,
-but a compressed executable is created and used. Defaults to off.
+jobs:
+  build:
+    runs-on: windows-latest
 
-    onefile: # optional, default is true
-    # Python flags to use. Default is what you are using to run Nuitka, this
-enforces a specific mode. These are options that also exist to standard
-Python executable. Currently supported: "-S" (alias "no_site"),
-"static_hashes" (do not use hash randomization), "no_warnings" (do not
-give Python run time warnings), "-O" (alias "no_asserts"), "no_docstrings"
-(do not use doc strings), "-u" (alias "unbuffered"), "isolated" (do not
-load outside code) and "-m" (package mode, compile as "package.__main__").
-Default empty.
+    steps:
+      # Check-out repository
+      - name: Check out the repository
+        uses: actions/checkout@v4
 
-    python-flag: # optional
-    # Use debug version or not. Default uses what you are using to run Nuitka, most
-likely a non-debug version. Only for debugging and testing purposes.
+      # Setup Python
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11.8'  # Specify the Python version
+          architecture: 'x64'    # Optional, defaults to x64 if not specified
 
-    python-debug: # optional
-    # Displays the detailed C compilation info from Scons during build process (useful for debugging purposes)
-    show-scons: # optional
-    # A comma separated list of plugins, such as pyside2, pyside6, tk-inter, etc.
-    enable-plugins: # optional
-    # A comma separated list of Qt plugins, such as qml, etc.
-    include-qt-plugins: # optional
-    # A comma separated list of Qt plugins to not included, to take away from default.
-    noinclude-qt-plugins: # optional
-    # Include data files for the given package name. DLLs and extension modules
-are not data files and never included like this. Can use patterns the
-filenames as indicated below. Data files of packages are not included
-by default, but package configuration can do it.
-This will only include non-DLL, non-extension modules, i.e. actual data
-files. After a ":" optionally a filename pattern can be given as
-well, selecting only matching files. Examples:
-"--include-package-data=package_name" (all files)
-"--include-package-data=package_name=*.txt" (only certain type)
-"--include-package-data=package_name=some_filename.dat (concrete file)
-Default empty.
+      # Build Python script into a single executable or app folder (macOS)
+      - name: Build Python executable
+        uses: Nuitka/Nuitka-Action@main
+        with:
+          nuitka-version: main
+          script-name: main.py
+          mode: app
 
-    include-package-data: # optional
-    # Include data files by filenames in the distribution. There are many
-allowed forms. With '--include-data-files=/path/to/file/*.txt=folder_name/some.txt' it
-will copy a single file and complain if it's multiple. With
-'--include-data-files=/path/to/files/*.txt=folder_name/' it will put
-all matching files into that folder. For recursive copy there is a
-form with 3 values that '--include-data-files=/path/to/scan=folder_name=**/*.txt'
-that will preserve directory structure. Default empty.
-
-    include-data-files: # optional
-    # Include data files from complete directory in the distribution. This is
-recursive. Check '--include-data-files' with patterns if you want non-recursive
-inclusion. An example would be '--include-data-dir=/path/some_dir=data/some_dir'
-for plain copy, of the whole directory. All files are copied, if you want to
-exclude files you need to remove them beforehand, or use '--noinclude-data-files'
-option to remove them. Default empty.
-
-    include-data-dir: # optional
-    # Do not include data files matching the filename pattern given. This is against
-the target filename, not source paths. So to ignore a file pattern from package
-data for 'package_name' should be matched as 'package_name/*.txt'. Or for the
-whole directory simply use 'package_name'. Default empty.
-
-    noinclude-data-files: # optional
-    # Include the specified data file patterns outside of the onefile binary,
-rather than on the inside. Makes only sense in case of '--onefile'
-compilation. First files have to be specified as included somehow,
-then this refers to target paths. Default empty.
-
-    include-onefile-external-data: # optional
-    # Include a whole package. Give as a Python namespace, e.g. "some_package.sub_package" and Nuitka will then find it and include it and all the modules found below that disk location in the binary or extension module it creates, and make it available for import by the code. To avoid unwanted sub packages, e.g. tests you can e.g. do this "--nofollow-import-to=*.tests". Default empty.
-    include-package: # optional
-    # Include a single module. Give as a Python namespace, e.g. "some_package.some_module" and Nuitka will then find it and include it in the binary or extension module it creates, and make it available for import by the code. Default empty.
-    include-module: # optional
-    # Include the content of that directory, no matter if it is used by the given main program in a visible form. Overrides all other inclusion options. Can be given multiple times. Default empty.
-    include-plugin-directory: # optional
-    # Include into files matching the PATTERN. Overrides all other follow options. Can be given multiple times. Default empty.
-    include-plugin-files: # optional
-    # For already compiled extension modules, where there is both a source file and an extension module, normally the extension module is used, but it should be better to compile the module from available source code for best performance. If not desired, there is --no- prefer-source-code to disable warnings about it. Default off.
-    prefer-source-code: # optional
-    # Do not follow to that module name even if used, or if a package name, to the whole package in any case, overrides all other options. Can be given multiple times. Default empty.
-    nofollow-import-to: # optional
-    # User provided YAML file with package configuration. You can include DLLs, remove bloat, add hidden dependencies. Check User Manual for a complete description of the format to use. Can be given multiple times. Defaults to empty.
-    user-package-configuration-file: # optional
-    # Use this as a folder to unpack onefile. Defaults to '%TEMP%\onefile_%PID%_%TIME%', but e.g. '%CACHE_DIR%/%COMPANY%/%PRODUCT%/%VERSION%' would be cached and good too.
-    onefile-tempdir-spec: # optional
-    # When stopping the child, e.g. due to CTRL-C or shutdown, how much time to allow before killing it the hard way. Unit is ms. Default 5000.
-    onefile-child-grace-time: # optional
-    # When creating the onefile, disable compression of the payload. Default is false.
-    onefile-no-compression: # optional
-    # Enable warnings for implicit exceptions detected at compile time.
-
-    warn-implicit-exceptions: # optional
-    # Enable warnings for unusual code detected at compile time.
-
-    warn-unusual-code: # optional
-    # Allow Nuitka to download external code if necessary, e.g. dependency
-walker, ccache, and even gcc on Windows. To disable, redirect input
-from nul device, e.g. "</dev/null" or "<NUL:". Default is to prompt.
-
-    assume-yes-for-downloads: # optional, default is true
-    # Disable warning for a given mnemonic. These are given to make sure you are aware of
-certain topics, and typically point to the Nuitka website. The mnemonic is the part
-of the URL at the end, without the HTML suffix. Can be given multiple times and
-accepts shell pattern. Default empty.
-
-    nowarn-mnemonic: # optional
-    # Disables debugging helpers, that will help with runtime issues. Only enable when you find no more issues.
-    deployment: # optional
-    # Partially disables debugging helpers, that will help with runtime issues.
-    no-deployment-flag: # optional
-    # Directory for output builds
-    output-dir: # optional, default is build
-    # Specify how the executable should be named. For extension modules there is no choice, also not for standalone mode and using it will be an error. This may include path information that needs to exist though. Defaults to '<program_name>' on this platform. .exe)
-    output-file: # optional
-    # When compiling for Windows or macOS, disable the console window and create a GUI application. Defaults to false.
-    disable-console: # optional
-    # When compiling for Windows or macOS, enable the console window and create a GUI application. Defaults to false and tells Nuitka your choice is intentional.
-    enable-console: # optional
-    # Name of the company to use in version information. One of file or product version is required, when a version resource needs to be added, e.g. to specify product name, or company name.
-    company-name: # optional
-    # Name of the product to use in version information. Defaults to base filename of the binary.
-    product-name: # optional
-    # File version to use in version information. Must be a sequence of up to 4 numbers, e.g. 1.0.0.0, only this format is allowed. One of file or product version is required, when a version resource needs to be added, e.g. to specify product name, or company name. Defaults to unused.
-    file-version: # optional
-    # Product version to use in version information. Must be a sequence of up to 4 numbers, e.g. 1.0.0.0, only this format is allowed. One of file or product version is required, when a version resource needs to be added, e.g. to specify product name, or company name. Defaults to unused.
-    product-version: # optional
-    # Description of the file use in version information.  One of file or product version is required, when a version resource needs to be added, e.g. to specify product name, or company name. Defaults to nonsense.
-    file-description: # optional
-    # Copyright information to add to version information. Defaults to empty.
-    copyright: # optional
-    # Trademarks information to add to version information. Defaults to empty.
-    trademarks: # optional
-    # Add executable icon. Can be given multiple times for different resolutions or files with multiple icons inside. In the later case, you may also suffix with \#<n> where n is an integer index starting from 1, specifying a specific icon to be included, and all others to be ignored.
-    windows-icon-from-ico: # optional
-    # Request Windows User Control, to grant admin rights on execution. (Windows only). Defaults to off.
-    windows-uac-admin: # optional
-    # Request Windows User Control, to enforce running from a few folders only, remote desktop access. (Windows only). Defaults to off.
-    windows-uac-uiaccess: # optional
-    # Allows/enforces building with MinGW64 on Windows
-    mingw64: # optional
-    # When compiling for macOS, create a bundle rather than a plain binary application. Currently experimental and incomplete. Currently this is the only way to unlock disabling of console. Defaults to false.
-    macos-create-app-bundle: # optional
-    # Add icon for the application bundle to use. Can be given only one time. Defaults to Python icon if available.
-    macos-app-icon: # optional
-    # options ('universal, 'arm64', 'x86_64') Default and limit is what the running Python allows for. Default is 'native' which is the architecture the Python is run with.
-    macos-target-arch: # optional
-    # Name of the application to use for macOS signing. Follow 'com.YourCompany.AppName' naming results for best results, as these have to be globally unique, and will potentially grant protected API accesses.
-    macos-signed-app-name: # optional
-    # options ('gui', 'background', 'ui-element') Mode of application for the application bundle. When launching a Window, and appearing in Docker is desired, default value 'gui' is a good fit. Without a Window ever, the application is a 'background' application. For UI elements that get to display later, 'ui-element' is in-between. The application will not appear in dock, but get full access to desktop when it does open a Window later
-    macos-app-mode: # optional
-    # When signing on macOS, by default an ad-hoc identify will be used, but with this option your get to specify another identity to use. The signing of code is now mandatory on macOS and cannot be disabled. Default 'ad-hoc' if not given.
-    macos-sign-identity: # optional
-    # When signing for notarization, using a proper TeamID identity from Apple, use the required runtime signing option, such that it can be accepted.
-    macos-sign-notarization: # optional
-    # Product version to use in macOS bundle information. Defaults to '1.0' if not given.
-    macos-app-version: # optional
-    # Request an entitlement for access to a macOS protected resources, e.g. 'NSMicrophoneUsageDescription:Microphone access for recording audio.' requests access to the microphone and provides an informative text for the user, why that is needed. Before the colon, is an OS identifier for an access right, then the informative text. Legal values can be found on https://developer.apple.com/documentation/bundleresources/information_property_list/protected_resources and the option can be specified multiple times. Default empty.
-    macos-app-protected-resource: # optional
-    # Pattern of data files to embed for use during compile time. These should match target filenames.
-    embed-data-files-compile-time-pattern: # optional
-    # Pattern of data files to embed for use during run time. These should match target filenames.
-    embed-data-files-run-time-pattern: # optional
-    # Pattern of data files to embed for use with Qt at run time. These should match target filenames.
-    embed-data-files-qt-resource-pattern: # optional
-    # For debugging purposes, print out information for Qt resources not found.
-    embed-debug-qt-resources: # optional
-    # The key to use.
-    encryption-key: # optional
-    # Apply encryption to standard output.
-    encrypt-stdout: # optional
-    # Apply encryption to standard error.
-    encrypt-stderr: # optional
-    # Disables caching of compiled binaries. Defaults to false.
-    disable-cache: # optional
+      # Upload built executable as an artifact
+      - name: Upload executable artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: exe
+          path: build/wuwadownloader.exe
+          include-hidden-files: true
