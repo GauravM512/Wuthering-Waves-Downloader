@@ -1,4 +1,4 @@
-            - name: Build executables or extension modules from Python projects
+- name: Build executables or extension modules from Python projects
   # You may pin to the exact commit or the version.
   # uses: Nuitka/Nuitka-Action@12e193a947ea7cb9c807a4e4161092f2c16ac501
   uses: Nuitka/Nuitka-Action@v1.1
