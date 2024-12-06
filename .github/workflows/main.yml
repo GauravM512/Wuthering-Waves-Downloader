@@ -23,7 +23,10 @@ jobs:
         with:
           python-version: '3.11.8'  # Specify the Python version
           architecture: 'x64'    # Optional, defaults to x64 if not specified
-
+      - name: Install Dependencies
+        run: |
+          pip install -r requirements.txt
+          
       # Build Python script into a single executable or app folder (macOS)
       - name: Build Python executable
         uses: Nuitka/Nuitka-Action@main
